@@ -15,9 +15,9 @@ instance Show Term where
 term :: Parser Term
 term = spaced $ choice [s, k, apply]
     where
-    s     = pure S     <* spaced "S"
-    k     = pure K     <* spaced "K"
-    apply = pure Apply <* spaced "(" <*> term <*> term <* spaced ")"
+    s     = pure S     <* "S"
+    k     = pure K     <* "K"
+    apply = pure Apply <* "(" <*> term <*> term <* ")"
     spaced i = skipSpace *> i <* skipSpace
 
 main :: IO ()
