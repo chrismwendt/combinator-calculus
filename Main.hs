@@ -13,12 +13,12 @@ instance Show Term where
     show (Apply l r) = "(" ++ show l ++ " " ++ show r ++ ")"
 
 term :: Parser Term
-term = spacey $ choice [s, k, apply]
+term = spaced $ choice [s, k, apply]
     where
-    s     = pure S     <* spacey "S"
-    k     = pure K     <* spacey "K"
-    apply = pure Apply <* spacey "(" <*> term <*> term <* spacey ")"
-    spacey i = skipSpace *> i <* skipSpace
+    s     = pure S     <* spaced "S"
+    k     = pure K     <* spaced "K"
+    apply = pure Apply <* spaced "(" <*> term <*> term <* spaced ")"
+    spaced i = skipSpace *> i <* skipSpace
 
 main :: IO ()
 main = interact (unlines . map process . lines)
