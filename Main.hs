@@ -2,15 +2,11 @@
 
 import Control.Applicative
 import Data.Attoparsec.ByteString.Char8
-import Data.ByteString.Char8 (pack)
+import Data.ByteString.Char8 (ByteString, pack, unpack)
 import Data.Functor
+import qualified Text.PrettyPrint as P
 
 data Term = S | K | Apply Term Term deriving (Eq)
-
-instance Show Term where
-    show S = "S"
-    show K = "K"
-    show (Apply l r) = "(" ++ show l ++ " " ++ show r ++ ")"
 
 term :: Parser Term
 term = skipSpace *> choice [s, k, apply] <* skipSpace
@@ -19,10 +15,17 @@ term = skipSpace *> choice [s, k, apply] <* skipSpace
     k     = pure K     <* "K"
     apply = pure Apply <* "(" <*> term <*> term <* ")"
 
+toDoc :: Term -> P.Doc
+toDoc S = P.text "S"
+toDoc K = P.text "K"
+toDoc (Apply l r) = P.parens $ P.sep [P.nest 1 (toDoc l), P.nest 1 (toDoc r)]
+
 main :: IO ()
 main = interact (unlines . map process . lines)
     where
-    process = either id (show . evaluate) . parseOnly (term <* endOfInput) . pack
+    process = either id renderTerm . parseTerm . pack
+    renderTerm = P.renderStyle (P.style { P.mode = P.OneLineMode }) . toDoc
+    parseTerm = parseOnly (term <* endOfInput)
 
 step :: Term -> Term
 step S = S
