@@ -16,8 +16,8 @@ term = skipSpace *> choice [s, k, apply] <* skipSpace
     apply = pure Apply <* "(" <*> term <*> term <* ")"
 
 toDoc :: Term -> P.Doc
-toDoc S = P.text "S"
-toDoc K = P.text "K"
+toDoc S           = P.text "S"
+toDoc K           = P.text "K"
 toDoc (Apply l r) = P.parens $ P.sep [P.nest 1 (toDoc l), P.nest 1 (toDoc r)]
 
 main :: IO ()
