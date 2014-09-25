@@ -23,7 +23,7 @@ toDoc (Apply l r) = P.parens $ P.sep [P.nest 1 (toDoc l), P.nest 1 (toDoc r)]
 main :: IO ()
 main = interact (unlines . map process . lines)
     where
-    process = either id renderTerm . parseTerm . pack
+    process = either id (renderTerm . evaluate) . parseTerm . pack
     renderTerm = P.renderStyle (P.style { P.mode = P.OneLineMode }) . toDoc
     parseTerm = parseOnly (term <* endOfInput)
 
