@@ -1,5 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 
+module CombinatorCalculus where
+
 import Control.Applicative
 import Data.Attoparsec.ByteString.Char8
 import Data.ByteString.Char8 (ByteString, pack, unpack)
