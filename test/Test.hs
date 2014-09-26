@@ -15,6 +15,7 @@ tests =
     , ("S S S S -> S S (S S)", evaluate (Apply (Apply ss S) S) == (Apply ss ss))
     , ("K (K K K) K -> K", evaluate (Apply (Apply K (Apply kk K)) K) == K)
     , ("K K omega -> K", evaluate (Apply kk omega) == K)
+    , ("S (K K K) K K -> K", evaluate (Apply (Apply (Apply S (Apply kk K)) K) K) == K)
     , ("T NOT -> F -> S K", evaluate (not t) == f)
     , ("F NOT -> T -> K", evaluate (not f) == t)
     , ("T OR T -> T -> K", evaluate (or t t) == t)
