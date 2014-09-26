@@ -22,6 +22,9 @@ toDoc S           = P.text "S"
 toDoc K           = P.text "K"
 toDoc (Apply l r) = P.parens $ P.sep [P.nest 1 (toDoc l), P.nest 1 (toDoc r)]
 
+renderTerm :: Term -> String
+renderTerm = P.render . toDoc
+
 main :: IO ()
 main = interact (unlines . map process . lines)
     where
