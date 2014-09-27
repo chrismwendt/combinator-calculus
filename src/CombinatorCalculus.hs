@@ -45,7 +45,6 @@ main = interact (unlines . map process . lines)
     where
     process = either id eval . parseTerm . pack
     eval = renderTerm . last . take maxSteps . evaluate
-    renderTerm = P.renderStyle (P.style { P.mode = P.OneLineMode }) . toDoc
     parseTerm = parseOnly (term <* endOfInput)
     maxSteps = 1000
 
