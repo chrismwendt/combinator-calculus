@@ -4,8 +4,7 @@ module CombinatorCalculus where
 
 import Control.Applicative
 import Data.Attoparsec.ByteString.Char8 hiding (take)
-import Data.ByteString.Char8 (ByteString, pack, unpack)
-import Data.Functor
+import Data.ByteString.Char8 (pack)
 import Data.List
 import Data.Maybe
 import qualified Text.PrettyPrint as P
@@ -56,7 +55,7 @@ evaluate t = t : unfoldr (fmap dup . step) t
 step :: Term -> Maybe Term
 step (Apply K (a : _ : zs))     = Just $ apply a zs
 step (Apply S (a : b : c : zs)) = Just $ apply a (c : b `apply` [c] : zs)
-step t@(Apply c zs)
+step (Apply c zs)
     | any isJust stepZs = Just $ Apply c (zipWith fromMaybe zs stepZs)
     | otherwise         = Nothing
     where
