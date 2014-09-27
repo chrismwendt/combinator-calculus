@@ -6,21 +6,36 @@ import Control.Applicative
 import Data.Attoparsec.ByteString.Char8 hiding (take)
 import Data.ByteString.Char8 (ByteString, pack, unpack)
 import Data.Functor
+import Data.List
+import Data.Maybe
 import qualified Text.PrettyPrint as P
 
-data Term = S | K | Apply Term Term deriving (Eq)
+data Term = Apply Combinator [Term] deriving (Eq)
+
+data Combinator = S | K deriving (Eq)
 
 term :: Parser Term
-term = skipSpace *> choice [s, k, apply] <* skipSpace
+term = applyNone <|> parens applySome
     where
-    s     = pure S     <* "S"
-    k     = pure K     <* "K"
-    apply = pure Apply <* "(" <*> term <*> term <* ")"
+    applyNone    = applyTo $ pure []
+    applySome    = applyTo $ term `sepBy1` skipSpace
+    applyTo args = Apply <$> combinator <* skipSpace <*> args
+    combinator   = s <|> k
+    s            = S <$ "S"
+    k            = K <$ "K"
+
+parens :: Parser a -> Parser a
+parens p = "(" *> p <* ")"
 
 toDoc :: Term -> P.Doc
-toDoc S           = P.text "S"
-toDoc K           = P.text "K"
-toDoc (Apply l r) = P.parens $ P.sep [P.nest 1 (toDoc l), P.nest 1 (toDoc r)]
+toDoc (Apply c args)
+    | null args = cDoc
+    | otherwise = P.parens (P.sep $ cDoc : argsDocs)
+    where
+    cDoc = P.text $ case c of
+        S -> "S"
+        K -> "K"
+    argsDocs = map (P.nest 1 . toDoc) args
 
 renderTerm :: Term -> String
 renderTerm = P.render . toDoc
@@ -35,12 +50,18 @@ main = interact (unlines . map process . lines)
     maxSteps = 1000
 
 evaluate :: Term -> [Term]
-evaluate t@S = [t]
-evaluate t@K = [t]
-evaluate t@(Apply (Apply K a) b) = [t] ++ evaluate a
-evaluate t@(Apply (Apply (Apply S a) b) c) = [t] ++ evaluate (Apply (Apply a c) (Apply b c))
-evaluate t@(Apply a b) = [t] ++ map (flip Apply b) (tail as) ++ map (Apply a') (tail bs)
+evaluate t = t : unfoldr (fmap dup . step) t
     where
-    as = evaluate a
-    a' = last as
-    bs = evaluate b
+    dup a = (a, a)
+
+step :: Term -> Maybe Term
+step (Apply K (a : _ : zs))     = Just $ apply a zs
+step (Apply S (a : b : c : zs)) = Just $ apply a (c : b `apply` [c] : zs)
+step t@(Apply c zs)
+    | any isJust stepZs = Just $ Apply c (zipWith fromMaybe zs stepZs)
+    | otherwise         = Nothing
+    where
+    stepZs = map step zs
+
+apply :: Term -> [Term] -> Term
+apply (Apply c as) bs = Apply c (as ++ bs)
