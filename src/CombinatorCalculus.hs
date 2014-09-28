@@ -4,7 +4,6 @@ module CombinatorCalculus where
 
 import Control.Applicative
 import Data.Attoparsec.ByteString.Char8 hiding (take)
-import Data.ByteString.Char8 (pack)
 import Data.List
 import Data.Maybe
 import qualified Text.PrettyPrint as P
@@ -38,14 +37,6 @@ toDoc (Apply c args)
 
 renderTerm :: Term -> String
 renderTerm = P.render . toDoc
-
-main :: IO ()
-main = interact (unlines . map process . lines)
-    where
-    process = either id eval . parseTerm . pack
-    eval = renderTerm . last . take maxSteps . evaluate
-    parseTerm = parseOnly (term <* endOfInput)
-    maxSteps = 1000
 
 evaluate :: Term -> [Term]
 evaluate t = t : unfoldr (fmap dup . step) t
