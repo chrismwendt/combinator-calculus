@@ -1,6 +1,13 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module CombinatorCalculus (Term(..), Combinator(..), parseTerm, renderTerm, step, evaluate, apply) where
+module CombinatorCalculus
+    ( Term(..)
+    , Combinator(..)
+    , parseTerm
+    , renderTerm
+    , step
+    , evaluate
+    , apply) where
 
 import Control.Applicative
 import Data.ByteString.Char8 (pack)
