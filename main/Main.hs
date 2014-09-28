@@ -19,5 +19,7 @@ main = runInputT defaultSettings loop
 process :: String -> String
 process input = either id eval $ parseTerm input
     where
-    eval = renderTerm . last . take maxSteps . evaluate
+    eval term = case splitAt (1 + maxSteps) (evaluate term) of
+        (steps, []) -> renderTerm (last steps)
+        _  -> "Reached step limit: " ++ show maxSteps
     maxSteps = 1000
