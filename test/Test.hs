@@ -1,7 +1,5 @@
-import CombinatorCalculus hiding (main)
-import Control.Applicative
+import CombinatorCalculus
 import Control.Monad
-import Data.Either
 
 main :: IO ()
 main = do
