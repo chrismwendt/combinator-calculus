@@ -29,6 +29,9 @@ term = applyNone <|> parens applySome
 parens :: Parser a -> Parser a
 parens p = "(" *> p <* ")"
 
+renderTerm :: Term -> String
+renderTerm = P.renderStyle P.style { P.mode = P.OneLineMode } . toDoc
+
 toDoc :: Term -> P.Doc
 toDoc (Apply c args)
     | null args = cDoc
@@ -38,9 +41,6 @@ toDoc (Apply c args)
         S -> "S"
         K -> "K"
     argsDocs = map (P.nest 1 . toDoc) args
-
-renderTerm :: Term -> String
-renderTerm = P.renderStyle P.style { P.mode = P.OneLineMode } . toDoc
 
 evaluate :: Term -> [Term]
 evaluate t = t : unfoldr (fmap dup . step) t
