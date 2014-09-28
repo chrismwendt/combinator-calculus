@@ -1,13 +1,14 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 module CombinatorCalculus
-    ( Term(..)
-    , Combinator(..)
+    (
+      Term(..)
     , parseTerm
     , renderTerm
     , step
     , evaluate
-    , apply) where
+    )
+    where
 
 import Control.Applicative
 import Data.ByteString.Char8 (pack)
@@ -16,22 +17,15 @@ import Data.List
 import Data.Maybe
 import qualified Text.PrettyPrint as P
 
-data Term = Apply Combinator [Term] deriving (Eq)
-
-data Combinator = S | K deriving (Eq)
+data Term = S | K | App Term Term deriving (Eq, Show)
 
 parseTerm :: String -> Either String Term
 parseTerm = parseOnly (term <* endOfInput) . pack
 
 term :: Parser Term
-term = applyNone <|> parens applySome
+term = foldl1 App <$> subTerm `sepBy1` skipSpace
     where
-    applyNone    = applyTo $ pure []
-    applySome    = applyTo $ term `sepBy1` skipSpace
-    applyTo args = Apply <$> combinator <* skipSpace <*> args
-    combinator   = s <|> k
-    s            = S <$ "S"
-    k            = K <$ "K"
+    subTerm = choice [S <$ "S", K <$ "K", parens term]
 
 parens :: Parser a -> Parser a
 parens p = "(" *> p <* ")"
@@ -40,14 +34,10 @@ renderTerm :: Term -> String
 renderTerm = P.renderStyle P.style { P.mode = P.OneLineMode } . toDoc
 
 toDoc :: Term -> P.Doc
-toDoc (Apply c args)
-    | null args = cDoc
-    | otherwise = P.parens (P.sep $ cDoc : argsDocs)
-    where
-    cDoc = P.text $ case c of
-        S -> "S"
-        K -> "K"
-    argsDocs = map (P.nest 1 . toDoc) args
+toDoc S                   = P.text "S"
+toDoc K                   = P.text "K"
+toDoc (App a b@(App _ _)) = P.sep [toDoc a, P.parens (toDoc b)]
+toDoc (App a b)           = P.sep [toDoc a, toDoc b]
 
 evaluate :: Term -> [Term]
 evaluate t = t : unfoldr (fmap dup . step) t
@@ -55,13 +45,13 @@ evaluate t = t : unfoldr (fmap dup . step) t
     dup a = (a, a)
 
 step :: Term -> Maybe Term
-step (Apply K (a : _ : zs))     = Just $ apply a zs
-step (Apply S (a : b : c : zs)) = Just $ apply a (c : b `apply` [c] : zs)
-step (Apply c zs)
-    | any isJust stepZs = Just $ Apply c (zipWith fromMaybe zs stepZs)
-    | otherwise         = Nothing
+step S = Nothing
+step K = Nothing
+step (App (App K a) _) = Just a
+step (App (App (App S a) b) c) = Just (App (App a c) (App b c))
+step (App a b)
+    | any isJust [a', b'] = Just (App (fromMaybe a a') (fromMaybe b b'))
+    | otherwise           = Nothing
     where
-    stepZs = map step zs
-
-apply :: Term -> [Term] -> Term
-apply (Apply c as) bs = Apply c (as ++ bs)
+    a' = step a
+    b' = step b
