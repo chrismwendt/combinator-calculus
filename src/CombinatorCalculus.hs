@@ -3,6 +3,7 @@
 module CombinatorCalculus where
 
 import Control.Applicative
+import Data.ByteString.Char8 (pack)
 import Data.Attoparsec.ByteString.Char8 hiding (take)
 import Data.List
 import Data.Maybe
@@ -11,6 +12,9 @@ import qualified Text.PrettyPrint as P
 data Term = Apply Combinator [Term] deriving (Eq)
 
 data Combinator = S | K deriving (Eq)
+
+parseTerm :: String -> Either String Term
+parseTerm = parseOnly (term <* endOfInput) . pack
 
 term :: Parser Term
 term = applyNone <|> parens applySome
