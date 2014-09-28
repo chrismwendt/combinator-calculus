@@ -1,9 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 import CombinatorCalculus
-import Control.Applicative
-import Data.Attoparsec.ByteString.Char8 hiding (take)
-import Data.ByteString.Char8 (pack)
 import System.Console.Haskeline
 
 main :: IO ()
@@ -20,8 +17,7 @@ main = runInputT defaultSettings loop
                 loop
 
 process :: String -> String
-process input = either id eval $ parseTerm (pack input)
+process input = either id eval $ parseTerm input
     where
-    parseTerm = parseOnly (term <* endOfInput)
     eval = renderTerm . last . take maxSteps . evaluate
     maxSteps = 1000
