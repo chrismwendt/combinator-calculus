@@ -24,14 +24,9 @@ parseTerm :: String -> Either String Term
 parseTerm = parseOnly (term <* endOfInput) . pack
 
 term :: Parser Term
-term = applyNone <|> parens applySome
+term = foldl1 apply <$> subTerm `sepBy1` skipSpace
     where
-    applyNone    = applyTo $ pure []
-    applySome    = applyTo $ term `sepBy1` skipSpace
-    applyTo args = Apply <$> combinator <* skipSpace <*> args
-    combinator   = s <|> k
-    s            = S <$ "S"
-    k            = K <$ "K"
+    subTerm = choice [Apply S [] <$ "S", Apply K [] <$ "K", parens term]
 
 parens :: Parser a -> Parser a
 parens p = "(" *> p <* ")"
@@ -40,14 +35,13 @@ renderTerm :: Term -> String
 renderTerm = P.renderStyle P.style { P.mode = P.OneLineMode } . toDoc
 
 toDoc :: Term -> P.Doc
-toDoc (Apply c args)
-    | null args = cDoc
-    | otherwise = P.parens (P.sep $ cDoc : argsDocs)
+toDoc (Apply c args) = P.sep (c' : map toDocInner args)
     where
-    cDoc = P.text $ case c of
+    toDocInner t@(Apply _ []) = toDoc t
+    toDocInner t              = P.parens (toDoc t)
+    c' = P.text $ case c of
         S -> "S"
         K -> "K"
-    argsDocs = map (P.nest 1 . toDoc) args
 
 evaluate :: Term -> [Term]
 evaluate t = t : unfoldr (fmap dup . step) t
@@ -55,13 +49,16 @@ evaluate t = t : unfoldr (fmap dup . step) t
     dup a = (a, a)
 
 step :: Term -> Maybe Term
-step (Apply K (a : _ : zs))     = Just $ apply a zs
-step (Apply S (a : b : c : zs)) = Just $ apply a (c : b `apply` [c] : zs)
+step (Apply K (a : _ : zs))     = Just $ applyMany a zs
+step (Apply S (a : b : c : zs)) = Just $ applyMany a (c : b `apply` c : zs)
 step (Apply c zs)
     | any isJust stepZs = Just $ Apply c (zipWith fromMaybe zs stepZs)
     | otherwise         = Nothing
     where
     stepZs = map step zs
 
-apply :: Term -> [Term] -> Term
-apply (Apply c as) bs = Apply c (as ++ bs)
+apply :: Term -> Term -> Term
+apply (Apply c as) b = Apply c (as ++ [b])
+
+applyMany :: Term -> [Term] -> Term
+applyMany (Apply c as) bs = Apply c (as ++ bs)

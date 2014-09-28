@@ -36,4 +36,8 @@ tests =
     , ("(K (S K) (S K))", "(S K)") -- T F AND
     , ("(S K K (S K))", "(S K)") -- F T AND
     , ("(S K (S K) (S K))", "(S K)") -- F F AND
+    , ("K K S", "K")
+    , ("K K (S K (K K K S K S))", "K")
+    , ("(S K K) (K K) (S K (K K K S K S))", "K")
+    , ("(S)", "S")
     ]
