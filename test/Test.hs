@@ -1,8 +1,6 @@
 import CombinatorCalculus hiding (main)
 import Control.Applicative
 import Control.Monad
-import Data.Attoparsec.ByteString.Char8 hiding (take)
-import Data.ByteString.Char8 (ByteString, pack, unpack)
 import Data.Either
 
 main :: IO ()
@@ -14,12 +12,11 @@ main = do
 
 runTest :: String -> String -> Bool
 runTest input expected = either (const False) id $ do
-    term <- parseOneTerm input
-    t2 <- parseOneTerm expected
+    term <- parseTerm input
+    t2 <- parseTerm expected
     return $ renderTerm (eval term) == renderTerm (eval t2)
     where
     eval = last . take 1000 . evaluate
-    parseOneTerm = parseOnly (term <* endOfInput) . pack
 
 tests :: [(String, String)]
 tests =
