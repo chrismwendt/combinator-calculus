@@ -36,7 +36,7 @@ toDoc (Apply c args)
     argsDocs = map (P.nest 1 . toDoc) args
 
 renderTerm :: Term -> String
-renderTerm = P.render . toDoc
+renderTerm = P.renderStyle P.style { P.mode = P.OneLineMode } . toDoc
 
 evaluate :: Term -> [Term]
 evaluate t = t : unfoldr (fmap dup . step) t
