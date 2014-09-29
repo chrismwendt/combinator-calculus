@@ -15,5 +15,5 @@ cabal-version:       >=1.8
 executable combinator-calculus
   main-is:             Main.hs
   -- other-modules:
-  build-depends:       base ==4.6.*, attoparsec ==0.11.*, bytestring ==0.10.*, pretty ==1.1.*, haskeline ==0.7.*
+  build-depends:       base ==4.6.*, attoparsec ==0.11.*, bytestring ==0.10.*, pretty ==1.1.*, haskeline ==0.7.*, containers ==0.5.*
   hs-source-dirs:      main, src
