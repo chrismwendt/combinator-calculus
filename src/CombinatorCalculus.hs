@@ -23,28 +23,27 @@ data Combinator = S | K deriving (Eq, Show)
 
 type Term = Tree Combinator
 
-parseTerm :: String -> Either String Term
-parseTerm = parseOnly (term <* endOfInput) . pack
-
-term :: Parser Term
-term = foldl1 apply <$> subTerm `sepBy1` skipSpace
+parseTree :: Parser a -> String -> Either String (Tree a)
+parseTree a = parseOnly (tree <* endOfInput) . pack
     where
-    subTerm = choice [Node S [] <$ "S", Node K [] <$ "K", parens term]
+    tree = foldl1 apply <$> subTree `sepBy1` skipSpace
+    subTree = Node <$> a <*> pure [] <|> parens tree
+
+renderTree :: Tree String -> String
+renderTree = P.renderStyle P.style { P.mode = P.OneLineMode } . toDoc
+    where
+    toDoc (Node a forest)  = P.sep (P.text a : map innerToDoc forest)
+    innerToDoc (Node a []) = P.text a
+    innerToDoc t           = P.parens (toDoc t)
+
+parseTerm :: String -> Either String Term
+parseTerm = parseTree (S <$ "S" <|> K <$ "K")
 
 parens :: Parser a -> Parser a
 parens p = "(" *> p <* ")"
 
 renderTerm :: Term -> String
-renderTerm = P.renderStyle P.style { P.mode = P.OneLineMode } . toDoc
-
-toDoc :: Term -> P.Doc
-toDoc (Node c args) = P.sep (c' : map toDocInner args)
-    where
-    toDocInner t@(Node _ []) = toDoc t
-    toDocInner t              = P.parens (toDoc t)
-    c' = P.text $ case c of
-        S -> "S"
-        K -> "K"
+renderTerm = renderTree . fmap show
 
 evaluate :: Term -> [Term]
 evaluate t = t : unfoldr (fmap dup . step) t
@@ -60,8 +59,8 @@ step (Node c zs)
     where
     stepZs = map step zs
 
-apply :: Term -> Term -> Term
+apply :: Tree a -> Tree a -> Tree a
 apply (Node c as) b = Node c (as ++ [b])
 
-applyMany :: Term -> [Term] -> Term
+applyMany :: Tree a -> [Tree a] -> Tree a
 applyMany (Node c as) bs = Node c (as ++ bs)
