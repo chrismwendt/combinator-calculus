@@ -29,18 +29,15 @@ parseTree a = parseOnly (tree <* endOfInput) . pack
     tree = foldl1 apply <$> subTree `sepBy1` skipSpace
     subTree = Node <$> a <*> pure [] <|> parens tree
 
+parseTerm :: String -> Either String Term
+parseTerm = parseTree (S <$ "S" <|> K <$ "K")
+
 renderTree :: Tree String -> String
 renderTree = P.renderStyle P.style { P.mode = P.OneLineMode } . toDoc
     where
     toDoc (Node a forest)  = P.sep (P.text a : map innerToDoc forest)
     innerToDoc (Node a []) = P.text a
     innerToDoc t           = P.parens (toDoc t)
-
-parseTerm :: String -> Either String Term
-parseTerm = parseTree (S <$ "S" <|> K <$ "K")
-
-parens :: Parser a -> Parser a
-parens p = "(" *> p <* ")"
 
 renderTerm :: Term -> String
 renderTerm = renderTree . fmap show
@@ -64,3 +61,6 @@ apply (Node c as) b = Node c (as ++ [b])
 
 applyMany :: Tree a -> [Tree a] -> Tree a
 applyMany (Node c as) bs = Node c (as ++ bs)
+
+parens :: Parser a -> Parser a
+parens p = "(" *> p <* ")"
