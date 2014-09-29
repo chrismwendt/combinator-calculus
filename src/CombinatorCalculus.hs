@@ -24,10 +24,12 @@ data Combinator = S | K deriving (Eq, Show)
 type Term = Tree Combinator
 
 parseTree :: Parser a -> String -> Either String (Tree a)
-parseTree a = parseOnly (tree <* endOfInput) . pack
+parseTree a = parseOnly (tree a <* endOfInput) . pack
+
+tree :: Parser a -> Parser (Tree a)
+tree a = foldl1 apply <$> subTree `sepBy1` skipSpace
     where
-    tree = foldl1 apply <$> subTree `sepBy1` skipSpace
-    subTree = Node <$> a <*> pure [] <|> parens tree
+    subTree = Node <$> a <*> pure [] <|> parens (tree a)
 
 parseTerm :: String -> Either String Term
 parseTerm = parseTree (S <$ "S" <|> K <$ "K")
