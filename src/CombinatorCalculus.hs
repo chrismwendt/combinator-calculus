@@ -16,9 +16,9 @@ import Data.List
 import Data.Maybe
 import qualified Text.PrettyPrint as P
 
-data Term = Apply Combinator [Term] deriving (Eq)
+data Term = Apply Combinator [Term] deriving (Eq, Show)
 
-data Combinator = S | K deriving (Eq)
+data Combinator = S | K deriving (Eq, Show)
 
 parseTerm :: String -> Either String Term
 parseTerm = parseOnly (term <* endOfInput) . pack
