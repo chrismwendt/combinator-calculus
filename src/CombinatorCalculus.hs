@@ -14,14 +14,68 @@ module CombinatorCalculus
 import Control.Applicative
 import Data.ByteString.Char8 (pack)
 import Data.Attoparsec.ByteString.Char8 hiding (take)
+import Data.Foldable (foldlM)
 import Data.List
 import Data.Maybe
+import Data.Traversable
 import Data.Tree
 import qualified Text.PrettyPrint as P
 
 data Combinator = S | K deriving (Eq, Show)
 
 type Term = Tree Combinator
+
+type Definition a = (String, a)
+
+prelude :: String
+prelude = concat
+    [
+      "T = K"
+    , ", F = S K"
+    , ", NOT = S(S(K S)(S(K K)S))(K K)"
+    , ", OR = S(K S)(S(K(S(K S)))(S(K K)))"
+    , ", AND = S(S(K S)(S(K(S(K S)))(S(K(S(K(S(K S)))))(S(K S)(S(K K)(S(K S)K))))))(K(K(K(S K K))))"
+    ]
+
+halp p = help (prelude ++ p)
+
+help p = do
+    p' <- parseOnly program (pack p)
+    t <- p2t p'
+    t2 <- return $ last $ take 100 $ evaluate t
+    return $ renderTerm t2
+
+p2t :: ([Definition (Tree String)], Tree String) -> Either String Term
+p2t (ds, ts) = do
+    x <- ds'
+    resolveTree x ts
+    where
+    ds' = foldlM addDef [("K", Node K []), ("S", Node S [])] ds
+    addDef as (name, a) = resolveTree as a >>= \a' -> return ((name, a') : as)
+
+program :: Parser ([Definition (Tree String)], Tree String)
+program = (,) <$> defs (tree identifier) <* skipSpace <*> tree identifier
+
+defs :: Parser a -> Parser [Definition a]
+defs a = def a `sepBy` (skipSpace *> "," <* skipSpace) <* ";"
+
+identifier :: Parser String
+identifier = many1 (satisfy $ inClass "A-Z")
+
+def :: Parser a -> Parser (Definition a)
+def a = (,) <$> identifier <* skipSpace <* "=" <* skipSpace <*> a
+
+resolveDef (name, value) = (name, (resolveTree value))
+
+resolveTree :: [Definition Term] -> Tree String -> Either String Term
+resolveTree ds (Node c args) = case lookup c ds of
+    Nothing -> Left $ c ++ " is undefined."
+    Just c' -> applyMany c' <$> traverse (resolveTree ds) args
+
+-- resolveDefs :: [Definition String] -> [Definition Term]
+-- resolveDefs defs = map resolve defs
+--     where
+--     resolveDef (Definition name value) = Definition name (resolveTree value)
 
 parseTree :: Parser a -> String -> Either String (Tree a)
 parseTree a = parseOnly (tree a <* endOfInput) . pack
